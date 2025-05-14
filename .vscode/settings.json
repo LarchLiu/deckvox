@@ -1,0 +1,12 @@
+{
+  "prettier.enable": true,
+  // Set the default
+  "editor.formatOnSave": false,
+  // Enable per-language
+  "[markdown]": {
+    "editor.formatOnSave": true
+  },
+  "[json]": {
+    "editor.formatOnSave": true
+  }
+}

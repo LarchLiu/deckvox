@@ -1,0 +1,190 @@
+/* style.css - Popup styles */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    width: 420px; /* 稍微加宽以容纳更好的布局 */
+    padding: 0;
+    margin: 0;
+    background-color: #f0f2f5;
+    color: #333;
+    font-size: 14px;
+}
+
+.container {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px; /* 组之间的间距 */
+}
+
+header {
+    text-align: center;
+    margin-bottom: 0px; /* 减小标题和第一组的间距 */
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2b3c;
+    margin:0;
+}
+
+h2 {
+    font-size: 16px;
+    color: #34495e;
+    margin-top: 0;
+    margin-bottom: 12px; /* 小标题和内容的间距 */
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 6px;
+}
+
+.control-group {
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.07);
+}
+
+/* 开关区域 */
+.switch-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.switch-label {
+    font-weight: 500;
+    color: #555;
+}
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .3s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+input:checked + .slider { background-color: #28a745; }
+input:focus + .slider { box-shadow: 0 0 1px #28a745; }
+input:checked + .slider:before { transform: translateX(20px); }
+
+/* 配置区域 */
+.config-section .config-item {
+    margin-bottom: 15px; /* 配置项之间的间距 */
+}
+.config-section .config-item:last-child {
+    margin-bottom: 0;
+}
+.input-label {
+    display: block;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 6px;
+}
+input[type="text"] {
+    width: calc(100% - 22px); /* 减去 padding 和 border */
+    padding: 9px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: 8px; /* 输入框和按钮的间距 */
+}
+.config-item.telegram-config input[type="text"] {
+    margin-bottom: 10px; /* Telegram 输入框之间的间距 */
+}
+.config-item.telegram-config input[type="text"]:last-of-type {
+    margin-bottom: 8px; /* 最后一个 Telegram 输入框和按钮的间距 */
+}
+
+.small-button.save-button, button#saveNotesButton {
+    padding: 8px 12px;
+    font-size: 13px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: block; /* 让按钮占据一行 */
+    width: auto; /* 自动宽度 */
+    margin-top: 5px; /* 与上方元素的间距 */
+}
+.small-button.save-button:hover, button#saveNotesButton:hover {
+    background-color: #5a6268;
+}
+
+/* 数据操作区域 */
+.data-handling .details-box {
+    margin-top: 0; /* 移除与上方标题的额外间距 */
+    margin-bottom: 12px; /* 与下方按钮的间距 */
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 4px;
+}
+.data-handling .details-box p {
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-weight: 500;
+    font-size: 13px;
+    color: #495057;
+}
+.data-handling pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 100px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #212529;
+    border: 1px solid #ced4da;
+    line-height: 1.4;
+}
+.action-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    width: 100%;
+    margin-bottom: 10px; /* 与下方状态的间距 */
+}
+.action-button:hover:not(:disabled) { background-color: #0056b3; }
+.action-button:disabled { background-color: #a0c7e8; cursor: not-allowed; }
+
+.status-feedback {
+    margin-top: 8px;
+}
+.status-label { font-size: 13px; margin: 5px 0; color: #333; }
+.status-label strong { color: #007bff; }
+.server-response-box { margin-top: 10px; }
+
+/* 备注区域 */
+textarea#notes {
+    width: calc(100% - 22px);
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 13px;
+    min-height: 60px;
+    resize: vertical;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+/* 通用消息 */
+.status-message {
+    text-align: center;
+    font-size: 13px;
+    color: #17a2b8;
+    min-height: 18px;
+    margin-top: 5px;
+}
+.error-message {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    min-height: 16px;
+}
+

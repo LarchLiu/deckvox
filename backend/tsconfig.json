@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "es2020",                       // 目标 ECMAScript 版本
+    "module": "commonjs",                     // 模块系统
+    "rootDir": "./src",                       // TypeScript 文件根目录
+    "outDir": "./dist",                       // 编译输出目录
+    "esModuleInterop": true,                  // 允许默认导入 CommonJS 模块
+    "forceConsistentCasingInFileNames": true, // 强制文件名大小写一致
+    "strict": true,                           // 启用所有严格类型检查选项
+    "skipLibCheck": true,                     // 跳过声明文件的类型检查
+    "resolveJsonModule": true                 // 允许导入 JSON 文件
+  },
+  "include": ["src/**/*"],                    // 要编译的文件
+  "exclude": ["node_modules", "**/*.spec.ts"] // 排除的文件
+}
