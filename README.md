@@ -3,6 +3,8 @@ DeckVox
 </h1>
 
 <p align="center">
-Smart Slides, Smarter Voice.
-<br>
+<strong>Smart Slides, Smarter Voice.</strong>
+</p>
+<p align="center">
+Powered by <strong>Slidev</strong>
 </p>
