@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import { prompt } from './constants';
+import { sha256 } from './utiles';
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ app.use(express.urlencoded({limit: '50mb', extended: true}));
 
 // API endpoint to process data and (conceptually) send to Telegram
 // The URL for this endpoint is configured directly in the Chrome extension popup.
-app.post('/api/initiate-task', (req: Request, res: Response) => {
+app.post('/api/initiate-task', async (req: Request, res: Response) => {
   try {
     // The payload from the extension is expected to be:
     // req.body = { taskData: { elementData, telegramBotToken, telegramChatId } }
@@ -40,16 +41,18 @@ app.post('/api/initiate-task', (req: Request, res: Response) => {
     }
 
     const { elementData, telegramBotToken, telegramChatId } = taskPayload;
-    const innerHTML_UniqueID = uuidv4();
+    const innerHTML_UniqueID = await sha256(elementData.innerHTML);
     const md = turndownService.turndown(elementData.innerHTML);
     // Create markdown directory if it doesn't exist
     const markdownDir = path.join(__dirname, '../markdown');
     if (!fs.existsSync(markdownDir)) {
       fs.mkdirSync(markdownDir, { recursive: true });
     }
-
+    
     const markdownPath = path.join(markdownDir, `${innerHTML_UniqueID}.md`);
-    fs.writeFileSync(markdownPath, md);
+    if (!fs.existsSync(markdownPath)) {
+      fs.writeFileSync(markdownPath, md);
+    }
 
     setTimeout(async () => {
       try {
@@ -66,7 +69,6 @@ app.post('/api/initiate-task', (req: Request, res: Response) => {
           ],
         })
         const duration = (Date.now() - startTime) / 1000;
-        console.log(`OpenAI request took ${duration} seconds`);
 
         // gemini format
         const data = response.candidates[0].content.parts[0].text || 'error'
@@ -79,9 +81,22 @@ app.post('/api/initiate-task', (req: Request, res: Response) => {
           fs.mkdirSync(slidesDir, { recursive: true });
         }
 
+        // Generate filename with timestamp if file exists
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        let slidePath = path.join(slidesDir, `${innerHTML_UniqueID}.md`);
+        let counter = 1;
+        while (fs.existsSync(slidePath)) {
+          slidePath = path.join(slidesDir, `${innerHTML_UniqueID}-${timestamp}-${counter}.md`);
+          counter++;
+        }
+
         // Write data to markdown file
-        const slidePath = path.join(slidesDir, `${innerHTML_UniqueID}.md`);
-        fs.writeFileSync(slidePath, data);
+        try {
+          fs.writeFileSync(slidePath, data);
+        } catch (error) {
+          console.error(`Error writing to file ${slidePath}:`, error);
+          throw error;
+        }
         
         fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
           method: 'POST',
@@ -123,7 +138,16 @@ app.post('/api/initiate-task', (req: Request, res: Response) => {
 // --- 启动服务器 ---
 const PORT = process.env.PORT || 8080; 
 server.listen(PORT, () => {
-  console.log(`Express API 服务器正在运行在 http://localhost:${PORT}`);
+  const startTime = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+  console.log(`Express API 服务器正在运行在 http://localhost:${PORT} (${startTime})`);
   console.log(`API 端点示例: POST http://localhost:${PORT}/api/initiate-task`);
 });
 
