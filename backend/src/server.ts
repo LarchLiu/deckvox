@@ -3,10 +3,21 @@ import express, { Request, Response } from 'express';
 import http from 'http'; // http is still needed for server.listen
 import { v4 as uuidv4 } from 'uuid'; // Can still be used for logging or other IDs if needed
 import TurndownService from 'turndown';
+import OpenAI from 'openai';
+import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { prompt } from './constants';
+
+dotenv.config();
 
 const turndownService = new TurndownService();
 const app = express();
 const server = http.createServer(app); // Express app runs on an HTTP server
+const openai = new OpenAI({
+  apiKey: process.env.AI_API_KEY,
+  baseURL: process.env.AI_API_URL,
+})
 
 // --- Express API 端点 ---
 // app.use(express.json()); // 中间件，用于解析 JSON 请求体
@@ -31,20 +42,70 @@ app.post('/api/initiate-task', (req: Request, res: Response) => {
     const { elementData, telegramBotToken, telegramChatId } = taskPayload;
     const innerHTML_UniqueID = uuidv4();
     const md = turndownService.turndown(elementData.innerHTML);
-    console.log(md)
+    // Create markdown directory if it doesn't exist
+    const markdownDir = path.join(__dirname, '../markdown');
+    if (!fs.existsSync(markdownDir)) {
+      fs.mkdirSync(markdownDir, { recursive: true });
+    }
 
-    setTimeout(() => {
-      fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          chat_id: telegramChatId,
-          text: `ID: ${innerHTML_UniqueID}) markdown:\n${md.substring(0, 3000)}`, // Telegram message limit is 4096 characters
-        }),
-      });
-    }, 3000);
+    const markdownPath = path.join(markdownDir, `${innerHTML_UniqueID}.md`);
+    fs.writeFileSync(markdownPath, md);
+
+    setTimeout(async () => {
+      try {
+        const startTime = Date.now();
+        const response: any = await openai.chat.completions.create({
+          model: process.env.AI_MODEL || '',
+          // reasoning_effort: "medium",
+          messages: [
+            { role: 'system', content: prompt },
+            {
+              role: 'user',
+              content: md,
+            },
+          ],
+        })
+        const duration = (Date.now() - startTime) / 1000;
+        console.log(`OpenAI request took ${duration} seconds`);
+
+        // gemini format
+        const data = response.candidates[0].content.parts[0].text || 'error'
+
+        // openai format
+        // const data = response.choices[0].message.content || 'error'
+
+        const slidesDir = path.join(__dirname, '../slides');
+        if (!fs.existsSync(slidesDir)) {
+          fs.mkdirSync(slidesDir, { recursive: true });
+        }
+
+        // Write data to markdown file
+        const slidePath = path.join(slidesDir, `${innerHTML_UniqueID}.md`);
+        fs.writeFileSync(slidePath, data);
+        
+        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: telegramChatId,
+            text: `ID: ${innerHTML_UniqueID} duration: ${duration} seconds`,
+          }),
+        });
+      } catch (error: any) {
+        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            chat_id: telegramChatId,
+            text: `ID: ${innerHTML_UniqueID}) error: ${error.message}`, // Telegram message limit is 4096 characters
+          }),
+        });
+      }
+    });
 
     // 返回给 Chrome 插件的响应
     return res.status(200).json({
