@@ -1,7 +1,6 @@
 // src/server.ts
 import express, { Request, Response } from 'express';
 import http from 'http'; // http is still needed for server.listen
-import { v4 as uuidv4 } from 'uuid'; // Can still be used for logging or other IDs if needed
 import TurndownService from 'turndown';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';

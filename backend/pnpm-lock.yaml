@@ -20,9 +20,6 @@ importers:
       turndown:
         specifier: ^7.2.0
         version: 7.2.0
-      uuid:
-        specifier: ^9.0.1
-        version: 9.0.1
     devDependencies:
       '@types/dotenv':
         specifier: ^8.2.3
@@ -36,9 +33,6 @@ importers:
       '@types/turndown':
         specifier: ^5.0.5
         version: 5.0.5
-      '@types/uuid':
-        specifier: ^9.0.2
-        version: 9.0.8
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -125,9 +119,6 @@ packages:
 
   '@types/turndown@5.0.5':
     resolution: {integrity: sha512-TL2IgGgc7B5j78rIccBtlYAnkuv8nUQqhQc+DSYV5j9Be9XOcm/SKOVRuA47xAVI3680Tk9B1d8flK2GWT2+4w==}
-
-  '@types/uuid@9.0.8':
-    resolution: {integrity: sha512-jg+97EGIcY9AGHJJRaaPVgetKDsrTgbRjQ5Msgjh/DQKEFl0DtyRr/VCOyD1T2R1MNeWPK/u7JoGhlDZnKBAfA==}
 
   abort-controller@3.0.0:
     resolution: {integrity: sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==}
@@ -638,10 +629,6 @@ packages:
     resolution: {integrity: sha1-n5VxD1CiZ5R7LMwSR0HBAoQn5xM=}
     engines: {node: '>= 0.4.0'}
 
-  uuid@9.0.1:
-    resolution: {integrity: sha512-b+1eJOlsR9K8HJpow9Ok3fiWOWSIcIzXodvv0rQjVoOVNpWMpxf1wZNpt4y9h10odCNrqnYp1OBzRktckBe3sA==}
-    hasBin: true
-
   v8-compile-cache-lib@3.0.1:
     resolution: {integrity: sha512-wa7YjyUGfNZngI/vtK0UHAN+lgDCxBPCylVXGp0zu59Fz5aiGtNXaq3DhIov063MorB+VfufLh3JlF2KdTK3xg==}
 
@@ -748,8 +735,6 @@ snapshots:
       '@types/send': 0.17.4
 
   '@types/turndown@5.0.5': {}
-
-  '@types/uuid@9.0.8': {}
 
   abort-controller@3.0.0:
     dependencies:
@@ -1269,8 +1254,6 @@ snapshots:
   unpipe@1.0.0: {}
 
   utils-merge@1.0.1: {}
-
-  uuid@9.0.1: {}
 
   v8-compile-cache-lib@3.0.1: {}
 
