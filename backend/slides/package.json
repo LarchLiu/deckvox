@@ -1,0 +1,20 @@
+{
+  "name": "slidev",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev aaef684dffa445be0816613b5871dd75789482aaa70ee2a8e0664a0411b36242.md --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@slidev/cli": "^51.6.0",
+    "@slidev/theme-default": "latest",
+    "@slidev/theme-seriph": "latest",
+    "slidev-theme-viplay": "^0.1.2",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  }
+}

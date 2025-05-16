@@ -18,8 +18,8 @@ importers:
         specifier: latest
         version: 0.25.0
       slidev-theme-viplay:
-        specifier: ^0.1.0
-        version: 0.1.0(@iconify-json/ic@1.2.2)(@slidev/client@51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1)))(kalidokit@1.1.5)(pixi-live2d-display@0.4.0(76g3zz2nt7dtjnktvdvk76m2oe))(pixi.js@6.5.10)(vue@3.5.13(typescript@5.8.3))
+        specifier: ^0.1.2
+        version: 0.1.2(@iconify-json/ic@1.2.2)(@slidev/client@51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1)))(kalidokit@1.1.5)(pixi-live2d-display@0.4.0(76g3zz2nt7dtjnktvdvk76m2oe))(pixi.js@6.5.10)(vue@3.5.13(typescript@5.8.3))
       vue:
         specifier: ^3.5.13
         version: 3.5.13(typescript@5.8.3)
@@ -27,9 +27,6 @@ importers:
       prettier:
         specifier: ^3.5.3
         version: 3.5.3
-      prettier-plugin-slidev:
-        specifier: ^1.0.5
-        version: 1.0.5(prettier@3.5.3)
 
 packages:
 
@@ -846,10 +843,6 @@ packages:
 
   '@slidev/client@51.6.0':
     resolution: {integrity: sha512-AofYH1iLwGzDPPGoddxqUcDSqX3joazFhNmdrqoyUrpg6L2tTvsF+yiu90NEZUlNM4Z9RRyHhCIOC9uEQLYwtQ==}
-    engines: {node: '>=18.0.0'}
-
-  '@slidev/parser@0.47.5':
-    resolution: {integrity: sha512-KvqOEhIFuMDu8CjAsehMNKlAnnmAn2TRHiEymc3CMadid05oWa5zgTxqEyMxUl2rjWpYs3A1yDiendZsGYs3HA==}
     engines: {node: '>=18.0.0'}
 
   '@slidev/parser@51.6.0':
@@ -2589,11 +2582,6 @@ packages:
   pptxgenjs@3.12.0:
     resolution: {integrity: sha512-ZozkYKWb1MoPR4ucw3/aFYlHkVIJxo9czikEclcUVnS4Iw/M+r+TEwdlB3fyAWO9JY1USxJDt0Y0/r15IR/RUA==}
 
-  prettier-plugin-slidev@1.0.5:
-    resolution: {integrity: sha512-1xaKzOAX17QAcn1roUgQIAfeio3HPYYefCgzxh6Bzk+5rJJxq0I8HUhLrUyv9nCpIP6e9CDv/yDQSdEeqqRUuA==}
-    peerDependencies:
-      prettier: ^3.2.4
-
   prettier@3.5.3:
     resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
     engines: {node: '>=14'}
@@ -2784,8 +2772,8 @@ packages:
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
-  slidev-theme-viplay@0.1.0:
-    resolution: {integrity: sha512-r+vqBfcuHbKD3oCUktYbgnDE37WrhIFcg2Htl76FQhpi+cxkBbxTajZCp6ncWGz4jC4xlqtIPVx47urMFpPg9Q==}
+  slidev-theme-viplay@0.1.2:
+    resolution: {integrity: sha512-scsF6IbjshcTT5a128S1Eght4K/NrfwBDGGsOOiloX3CkhN3+TWLOmHynvnhCrsGSSCGEoOXXWREaTATNcfzQw==}
     engines: {node: '>=18.0.0', slidev: '>=51.6.0'}
     peerDependencies:
       '@iconify-json/ic': ^1.2.2
@@ -4153,11 +4141,6 @@ snapshots:
       - vite
       - vue-template-compiler
       - vue-template-es2015-compiler
-
-  '@slidev/parser@0.47.5':
-    dependencies:
-      '@slidev/types': 0.47.5
-      js-yaml: 4.1.0
 
   '@slidev/parser@51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(typescript@5.8.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1))':
     dependencies:
@@ -6296,11 +6279,6 @@ snapshots:
       image-size: 1.2.1
       jszip: 3.10.1
 
-  prettier-plugin-slidev@1.0.5(prettier@3.5.3):
-    dependencies:
-      '@slidev/parser': 0.47.5
-      prettier: 3.5.3
-
   prettier@3.5.3: {}
 
   prism-theme-vars@0.2.5: {}
@@ -6506,7 +6484,7 @@ snapshots:
 
   sisteransi@1.0.5: {}
 
-  slidev-theme-viplay@0.1.0(@iconify-json/ic@1.2.2)(@slidev/client@51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1)))(kalidokit@1.1.5)(pixi-live2d-display@0.4.0(76g3zz2nt7dtjnktvdvk76m2oe))(pixi.js@6.5.10)(vue@3.5.13(typescript@5.8.3)):
+  slidev-theme-viplay@0.1.2(@iconify-json/ic@1.2.2)(@slidev/client@51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1)))(kalidokit@1.1.5)(pixi-live2d-display@0.4.0(76g3zz2nt7dtjnktvdvk76m2oe))(pixi.js@6.5.10)(vue@3.5.13(typescript@5.8.3)):
     dependencies:
       '@iconify-json/ic': 1.2.2
       '@slidev/client': 51.6.0(@nuxt/kit@3.17.2)(@vue/compiler-sfc@3.5.13)(markdown-it-async@2.2.0)(postcss@8.5.3)(vite@6.3.5(@types/node@18.19.100)(jiti@2.4.2)(yaml@2.7.1))
