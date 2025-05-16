@@ -22,22 +22,6 @@
             </div>
         </section>
 
-        <section class="control-group config-section">
-            <h2>配置</h2>
-            <div class="config-item">
-                <label for="serverApiUrlInput" class="input-label">API 端点 URL (完整地址):</label>
-                <input type="text" id="serverApiUrlInput" placeholder="例如: http://localhost:8080/api/process">
-                <button id="saveServerApiUrlButton" class="small-button save-button">保存URL</button>
-            </div>
-            
-            <div class="config-item telegram-config">
-                <label class="input-label">Telegram Bot 信息:</label>
-                <input type="text" id="telegramTokenInput" placeholder="Bot Token">
-                <input type="text" id="telegramChatIdInput" placeholder="Chat ID">
-                <button id="saveTelegramConfigButton" class="small-button save-button">保存Bot信息</button>
-            </div>
-        </section>
-
         <section class="control-group data-handling">
             <h2>数据操作</h2>
             <div class="details-box">
@@ -52,6 +36,22 @@
             <div class="details-box server-response-box">
                 <p><strong>API 服务器直接响应:</strong></p>
                 <pre id="apiServerResponseDisplay">无</pre>
+            </div>
+        </section>
+
+        <section class="control-group config-section">
+            <h2>配置</h2>
+            <div class="config-item">
+                <label for="serverApiUrlInput" class="input-label">API 端点 URL (完整地址):</label>
+                <input type="text" id="serverApiUrlInput" placeholder="例如: http://localhost:8080/api/process">
+                <button id="saveServerApiUrlButton" class="small-button save-button">保存URL</button>
+            </div>
+            
+            <div class="config-item telegram-config">
+                <label class="input-label">Telegram Bot 信息:</label>
+                <input type="text" id="telegramTokenInput" placeholder="Bot Token">
+                <input type="text" id="telegramChatIdInput" placeholder="Chat ID">
+                <button id="saveTelegramConfigButton" class="small-button save-button">保存Bot信息</button>
             </div>
         </section>
 

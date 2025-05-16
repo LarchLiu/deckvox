@@ -11,4 +11,6 @@ components.d.ts
 !.env.example
 
 markdown
-slides
+slides/*.md
+!slides/README.md
+!slides/slides.md

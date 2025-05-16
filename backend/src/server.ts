@@ -6,8 +6,10 @@ import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
+import yaml from 'js-yaml';
 import { prompt } from './constants';
 import { sha256 } from './utiles';
+import { ResponseData } from './types';
 
 dotenv.config();
 
@@ -18,6 +20,9 @@ const openai = new OpenAI({
   apiKey: process.env.AI_API_KEY,
   baseURL: process.env.AI_API_URL,
 })
+
+const ttsUrl = process.env.TTS_API_URL || ''
+const ttsToken = process.env.TTS_API_KEY
 
 // --- Express API 端点 ---
 // app.use(express.json()); // 中间件，用于解析 JSON 请求体
@@ -54,9 +59,9 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
     }
 
     setTimeout(async () => {
+      const startTime = Date.now();
       try {
-        const startTime = Date.now();
-        const response: any = await openai.chat.completions.create({
+        const response = await openai.chat.completions.create({
           model: process.env.AI_MODEL || '',
           // reasoning_effort: "medium",
           messages: [
@@ -70,10 +75,38 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
         const duration = (Date.now() - startTime) / 1000;
 
         // gemini format
-        const data = response.candidates[0].content.parts[0].text || 'error'
+        // let yamlData = (response as any).candidates[0].content.parts[0].text || 'error'
 
         // openai format
-        // const data = response.choices[0].message.content || 'error'
+        let yamlData = response.choices[0].message.content || 'error'
+
+        if (yamlData.startsWith('```yaml')) {
+          yamlData = yamlData.replace(/^```yaml\n/, '').replace(/```$/, '')
+        }
+
+        const res = yaml.load(yamlData) as ResponseData
+        let markdown = res.markdown
+          ? res.markdown.replace(/\n\n---\n\n/g, '\n\n---\n')
+            .replace(/\n\n---\n---\n/g, '\n\n---\n')
+            .replace(/(?<!\n)(\n---\n)(?!\n)/g, '\n---\n\n')
+            .replace(/---$/, '')
+          : ''
+        // 匹配 <div v-click="数字"> 和 </div> 之间的内容
+        const regex = /<div v-click="(\d+)">\n([\s\S]*?)<\/div>/;
+        markdown = markdown.replace(regex, (match, number, content) => {
+          // 修整内容前后的换行符
+          let formattedContent = content.trim();
+          // 如果内容不以\n开头，则添加\n
+          if (!formattedContent.startsWith('\n')) {
+            formattedContent = '\n' + formattedContent;
+          }
+          // 如果内容不以\n\n结尾，则添加\n\n
+          if (!formattedContent.endsWith('\n\n')) {
+            formattedContent += '\n\n';
+          }
+          // 返回新的字符串，包含原匹配的数字
+          return `<div v-click="${number}">\n${formattedContent}</div>`;
+        });
 
         const slidesDir = path.join(__dirname, '../slides');
         if (!fs.existsSync(slidesDir)) {
@@ -91,7 +124,7 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
 
         // Write data to markdown file
         try {
-          fs.writeFileSync(slidePath, data);
+          fs.writeFileSync(slidePath, markdown);
         } catch (error) {
           console.error(`Error writing to file ${slidePath}:`, error);
           throw error;
@@ -108,6 +141,7 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
           }),
         });
       } catch (error: any) {
+        const duration = (Date.now() - startTime) / 1000;
         fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
           method: 'POST',
           headers: {
@@ -115,9 +149,11 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
           },
           body: JSON.stringify({
             chat_id: telegramChatId,
-            text: `ID: ${innerHTML_UniqueID}) error: ${error.message}`, // Telegram message limit is 4096 characters
+            text: `ID: ${innerHTML_UniqueID} error: ${error.message} duration: ${duration}`, // Telegram message limit is 4096 characters
           }),
-        });
+        }).catch((error) => {
+          console.log(error.message)
+        })
       }
     });
 
@@ -134,6 +170,31 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
   }
 });
 
+app.get('/api/tts', async (req: Request, res: Response) => {
+  const { format, input, model } = req.query
+  const response = await fetch(ttsUrl, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${ttsToken}`,
+    },
+    body: JSON.stringify({
+      input,
+      model,
+      format
+    })
+  })
+
+  if (!response.ok) {
+    throw new Error(`TTS API error: ${response.status}`)
+  }
+
+  // Get the audio response
+  const audioBuffer = await response.arrayBuffer()
+
+  // Set appropriate headers for audio response
+  res.setHeader('Content-Type', 'audio/mpeg'); // Or the correct MIME type for your audio
+  res.send(Buffer.from(audioBuffer));
+})
 // --- 启动服务器 ---
 const PORT = process.env.PORT || 8080; 
 server.listen(PORT, () => {
@@ -149,6 +210,8 @@ server.listen(PORT, () => {
   console.log(`Express API 服务器正在运行在 http://localhost:${PORT} (${startTime})`);
   console.log(`API 端点示例: POST http://localhost:${PORT}/api/initiate-task`);
 });
+
+server.setTimeout(500000);
 
 // 可选：优雅关闭处理
 process.on('SIGINT', () => {
