@@ -3,3 +3,9 @@ export interface ResponseData {
   think: string[]
   markdown: string
 }
+
+export interface ResponseDify {
+  page: number
+  slide: string
+  subtitles: string[]
+}

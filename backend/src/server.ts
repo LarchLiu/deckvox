@@ -1,5 +1,5 @@
 // src/server.ts
-import express, { Request, Response } from 'express';
+import express, { Request, response, Response } from 'express';
 import http from 'http'; // http is still needed for server.listen
 import TurndownService from 'turndown';
 import OpenAI from 'openai';
@@ -8,8 +8,8 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { prompt } from './constants';
-import { sha256 } from './utiles';
-import { ResponseData } from './types';
+import { sha256, parseWorkflowStreamAndReturnOutputs } from './utiles';
+import { ResponseData, ResponseDify } from './types';
 
 dotenv.config();
 
@@ -21,6 +21,8 @@ const openai = new OpenAI({
   baseURL: process.env.AI_API_URL,
 })
 
+const difyUrl = process.env.DIFY_API_URL || 'https://api.dify.ai/v1/workflows/run'
+const difyKey = process.env.DIFY_API_KEY
 const ttsUrl = process.env.TTS_API_URL || ''
 const ttsToken = process.env.TTS_API_KEY
 
@@ -61,52 +63,62 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
     setTimeout(async () => {
       const startTime = Date.now();
       try {
-        const response = await openai.chat.completions.create({
-          model: process.env.AI_MODEL || '',
-          // reasoning_effort: "medium",
-          messages: [
-            { role: 'system', content: prompt },
-            {
-              role: 'user',
-              content: md,
-            },
-          ],
-        })
-        const duration = (Date.now() - startTime) / 1000;
-
+        // const response = await openai.chat.completions.create({
+        //   model: process.env.AI_MODEL || '',
+        //   // reasoning_effort: "medium",
+        //   messages: [
+        //     { role: 'system', content: prompt },
+        //     {
+        //       role: 'user',
+        //       content: md,
+        //     },
+        //   ],
+        // })
+        
         // gemini format
         // let yamlData = (response as any).candidates[0].content.parts[0].text || 'error'
 
         // openai format
-        let yamlData = response.choices[0].message.content || 'error'
+        // let yamlData = response.choices[0].message.content || 'error'
 
-        if (yamlData.startsWith('```yaml')) {
-          yamlData = yamlData.replace(/^```yaml\n/, '').replace(/```$/, '')
-        }
+        // if (yamlData.startsWith('```yaml')) {
+        //   yamlData = yamlData.replace(/^```yaml\n/, '').replace(/```$/, '')
+        // }
 
-        const res = yaml.load(yamlData) as ResponseData
-        let markdown = res.markdown
-          ? res.markdown.replace(/\n\n---\n\n/g, '\n\n---\n')
-            .replace(/\n\n---\n---\n/g, '\n\n---\n')
-            .replace(/(?<!\n)(\n---\n)(?!\n)/g, '\n---\n\n')
-            .replace(/---$/, '')
-          : ''
-        // 匹配 <div v-click="数字"> 和 </div> 之间的内容
-        const regex = /<div v-click="(\d+)">\n([\s\S]*?)<\/div>/;
-        markdown = markdown.replace(regex, (match, number, content) => {
-          // 修整内容前后的换行符
-          let formattedContent = content.trim();
-          // 如果内容不以\n开头，则添加\n
-          if (!formattedContent.startsWith('\n')) {
-            formattedContent = '\n' + formattedContent;
-          }
-          // 如果内容不以\n\n结尾，则添加\n\n
-          if (!formattedContent.endsWith('\n\n')) {
-            formattedContent += '\n\n';
-          }
-          // 返回新的字符串，包含原匹配的数字
-          return `<div v-click="${number}">\n${formattedContent}</div>`;
-        });
+        // const res = yaml.load(yamlData) as ResponseData
+        // let markdown = res.markdown
+        //   ? res.markdown.replace(/\n\n---\n\n/g, '\n\n---\n')
+        //     .replace(/\n\n---\n---\n/g, '\n\n---\n')
+        //     .replace(/(?<!\n)(\n---\n)(?!\n)/g, '\n---\n\n')
+        //     .replace(/---$/, '')
+        //   : ''
+        // // 匹配 <div v-click="数字"> 和 </div> 之间的内容
+        // const regex = /<div v-click="(\d+)">\n([\s\S]*?)<\/div>/;
+        // markdown = markdown.replace(regex, (match, number, content) => {
+        //   // 修整内容前后的换行符
+        //   let formattedContent = content.trim();
+        //   // 如果内容不以\n开头，则添加\n
+        //   if (!formattedContent.startsWith('\n')) {
+        //     formattedContent = '\n' + formattedContent;
+        //   }
+        //   // 如果内容不以\n\n结尾，则添加\n\n
+        //   if (!formattedContent.endsWith('\n\n')) {
+        //     formattedContent += '\n\n';
+        //   }
+        //   // 返回新的字符串，包含原匹配的数字
+        //   return `<div v-click="${number}">\n${formattedContent}</div>`;
+        // });
+
+        // ====dify====
+        const response = await parseWorkflowStreamAndReturnOutputs(difyUrl, md, difyKey || '')
+
+        const slides: ResponseDify[] = response.slides
+
+        const markdown = slides.map((s) => { 
+          return `===\npage: ${s.page}\nsubtitles: ${JSON.stringify(s.subtitles)}\n===\n\n${s.slide}`
+        }).join('\n\n')
+
+        const duration = (Date.now() - startTime) / 1000;
 
         const slidesDir = path.join(__dirname, '../slides');
         if (!fs.existsSync(slidesDir)) {
