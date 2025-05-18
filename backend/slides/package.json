@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "build": "slidev build",
-    "dev": "slidev aaef684dffa445be0816613b5871dd75789482aaa70ee2a8e0664a0411b36242.md --open",
+    "dev": "slidev --open",
     "export": "slidev export",
     "up": "taze major -r",
     "up:w": "taze major -r -w"

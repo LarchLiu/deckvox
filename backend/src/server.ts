@@ -8,8 +8,8 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { prompt } from './constants';
-import { sha256, parseWorkflowStreamAndReturnOutputs } from './utiles';
-import { ResponseData, ResponseDify } from './types';
+import { sha256, parseWorkflowStreamAndReturnOutputs, countTotalDisplayLineBlocks, splitOriginalStringByDisplayLines } from './utiles';
+import { ResponseData, ResponseDify, Subtitles } from './types';
 
 dotenv.config();
 
@@ -112,10 +112,69 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
         // ====dify====
         const response = await parseWorkflowStreamAndReturnOutputs(difyUrl, md, difyKey || '')
 
-        const slides: ResponseDify[] = response.slides
+        if (!response?.slides)
+          throw new Error('There is no slides')
 
-        const markdown = slides.map((s) => { 
-          return `===\npage: ${s.page}\nsubtitles: ${JSON.stringify(s.subtitles)}\n===\n\n${s.slide}`
+        const slides: ResponseDify[] = response.slides
+        const title = response.title as string
+
+        const markdown = slides.map((s, i) => {
+          let subtitles: Subtitles = {}
+          let headmatter = ''
+          if (i === 0) {
+            headmatter = `
+theme: seriph
+background: https://cover.sli.dev
+title: ${title}
+titleTemplate: '%s - Slaide'
+layout: cover
+addons:
+  - slidev-theme-viplay
+subtitlesConfig:
+  noTTSDelay: 2000
+  ttsApi: "https://edgetts.deno.dev/v1/audio/speech"
+  ttsLangName:
+    en: "English(US)"
+    zh_CN: "中文(简体)"
+  apiCustom:
+    voice: 'rate:-0.1|pitch:0.1'
+  ttsModel:
+    zh_CN:
+      - value: "zh-CN-YunjianNeural"
+        display: "云间"
+      - value: "zh-CN-XiaoxiaoNeural"
+        display: "晓晓"
+    en:
+      - value: "en-US-AndrewNeural"
+        display: "Andrew"
+      - value: "en-US-AriaNeural"
+        display: "Aria"
+`
+          } else {
+            const count = countTotalDisplayLineBlocks(s.slide)
+            if (count < 10) {
+              const layout = s.slide.length % 2 ? 'image-left' : 'image-right'
+              headmatter = `
+layout: ${layout}
+image: "https://cover.sli.dev"
+`
+            } else {
+              headmatter = `
+layout: two-cols
+`              
+              const lines = splitOriginalStringByDisplayLines(s.slide, Math.ceil(count / 2), count)
+              s.slide = `${lines.left}\n\n::right::\n\n${lines.right}`
+            }
+          }
+          s.subtitles?.forEach((subtitle, index) => {
+            if (index === 0) {
+              subtitles.default = subtitle
+            } else {
+              subtitles[`click${index}`] = subtitle
+            }
+          })
+          const subtitlesStr = s.subtitles?.length ? `subtitles: ${JSON.stringify(subtitles).replace(/\*\*/g, '')}` : ''
+          return `---\npage: ${s.page}\n${headmatter}${subtitlesStr}\n---\n\n${s.slide}`
         }).join('\n\n')
 
         const duration = (Date.now() - startTime) / 1000;
