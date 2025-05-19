@@ -1,17 +1,17 @@
 // src/server.ts
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express, { Request, response, Response } from 'express';
 import http from 'http'; // http is still needed for server.listen
 import TurndownService from 'turndown';
 import OpenAI from 'openai';
-import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { prompt } from './constants';
-import { sha256, parseWorkflowStreamAndReturnOutputs, countTotalDisplayLineBlocks, splitOriginalStringByDisplayLines } from './utiles';
-import { ResponseData, ResponseDify, Subtitles } from './types';
-
-dotenv.config();
+import { sha256, parseWorkflowStreamAndReturnOutputs, countTotalDisplayLineBlocks, splitOriginalStringByDisplayLines, updateGithubFiles } from './utiles';
+import { ResponseData, ResponseDify, Subtitles, GithubTree } from './types';
 
 const turndownService = new TurndownService();
 const app = express();
@@ -118,7 +118,7 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
         const slides: ResponseDify[] = response.slides
         const title = response.title as string
 
-        const markdown = slides.map((s, i) => {
+        const slaide = slides.map((s, i) => {
           let subtitles: Subtitles = {}
           let headmatter = ''
           if (i === 0) {
@@ -186,20 +186,39 @@ layout: two-cols
 
         // Generate filename with timestamp if file exists
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        let slidePath = path.join(slidesDir, `${innerHTML_UniqueID}.md`);
+        let slaidePath = `${innerHTML_UniqueID}.md`;
         let counter = 1;
-        while (fs.existsSync(slidePath)) {
-          slidePath = path.join(slidesDir, `${innerHTML_UniqueID}-${timestamp}-${counter}.md`);
+        while (fs.existsSync(path.join(slidesDir, slaidePath))) {
+          slaidePath = `${innerHTML_UniqueID}-${timestamp}-${counter}.md`;
           counter++;
         }
 
         // Write data to markdown file
         try {
-          fs.writeFileSync(slidePath, markdown);
+          fs.writeFileSync(path.join(slidesDir, slaidePath), slaide);
         } catch (error) {
-          console.error(`Error writing to file ${slidePath}:`, error);
+          console.error(`Error writing to file ${slaidePath}:`, error);
           throw error;
         }
+
+        const updateFiles: GithubTree[] = [
+          {
+            path: `contents/${innerHTML_UniqueID}.md`,
+            mode: '100644',
+            content: md,
+            type: 'blob',
+          },
+          {
+            path: `slides/${slaidePath}.md`,
+            mode: '100644',
+            content: slaide,
+            type: 'blob',
+          }
+        ]
+
+        // console.log('update github files')
+        await updateGithubFiles(updateFiles, `${slaidePath}.md`)
+        // console.log('update github files done')
         
         fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
           method: 'POST',
