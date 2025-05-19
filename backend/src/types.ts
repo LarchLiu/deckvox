@@ -18,3 +18,27 @@ export interface Slides {
   slide: string
   subtitles: Subtitles
 }
+
+export interface GitHubResponse {
+    sha: string;
+    url: string;
+    object?: {
+        sha: string;
+        type: string;
+        url: string;
+    };
+    tree?: Array<{
+        path: string;
+        mode: string;
+        type: string;
+        sha: string;
+    }>;
+}
+
+export interface GithubTree {
+  path: string
+  mode: '100644' | '100755' | '040000' | '160000' | '120000'
+  type: 'blob' | 'tree' | 'commit'
+  content?: string
+  sha?: string
+}

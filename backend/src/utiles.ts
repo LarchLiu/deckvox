@@ -1,3 +1,6 @@
+import { $fetch } from 'ofetch'
+import { GitHubResponse, GithubTree } from './types';
+
 export async function sha256(message: string) {
   const encoder = new TextEncoder();
   const data = encoder.encode(message);
@@ -306,4 +309,180 @@ export function splitOriginalStringByDisplayLines(originalString: string, target
     const rightSide = originalString.substring(splitOriginalIndex);
 
     return { left: leftSide, right: rightSide };
+}
+
+const slaideHubGithubRepo = process.env.SLAIDE_HUB_GITHUB_REPO || ''
+const githubToken = process.env.GITHUB_TOKEN || ''
+// GitHub API 配置
+const GITHUB_API_VERSION = '2022-11-28';
+const GITHUB_API_BASE = 'https://api.github.com';
+const GITHUB_API_HEADERS = {
+    'Accept': 'application/vnd.github+json',
+    'X-GitHub-Api-Version': GITHUB_API_VERSION,
+};
+// 验证配置
+function validateGithubConfig() {
+    if (!slaideHubGithubRepo) {
+        throw new Error('SLAIDE_HUB_GITHUB_REPO environment variable is not set');
+    }
+    if (!githubToken) {
+        throw new Error('GITHUB_TOKEN environment variable is not set');
+    }
+}
+
+// 通用 API 请求函数
+async function githubRequest<T>(
+    endpoint: string,
+    method: string,
+    body?: object
+): Promise<T> {
+    validateGithubConfig();
+
+    const url = `${GITHUB_API_BASE}/repos/${slaideHubGithubRepo}${endpoint}`;
+    const headers = {
+        ...GITHUB_API_HEADERS,
+        'Authorization': `Bearer ${githubToken}`,
+    };
+
+    try {
+        const response = await $fetch<T>(url, {
+            method,
+            headers,
+            body,
+            responseType: 'json',
+        });
+
+        if (!response) {
+            throw new Error(`Empty response from GitHub API: ${endpoint}`);
+        }
+
+        return response;
+    } catch (error) {
+        console.error(`GitHub API error (${endpoint}):`, error);
+        throw error;
+    }
+}
+
+export async function getGithubReference(): Promise<GitHubResponse> {
+    const response = await githubRequest<GitHubResponse>(
+        '/git/refs/heads/main',
+        'GET'
+    );
+
+    if (!response.object?.sha) {
+        throw new Error('Invalid reference response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function getGithubTree(): Promise<GitHubResponse> {
+    const response = await githubRequest<GitHubResponse>(
+        '/git/trees/main',
+        'GET'
+    );
+
+    if (!response.sha) {
+        throw new Error('Invalid tree response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function githubBlob(content: string): Promise<GitHubResponse> {
+    const response = await githubRequest<GitHubResponse>(
+        '/git/blobs',
+        'POST',
+        {
+            content,
+            encoding: 'utf-8'
+        }
+    );
+
+    if (!response.sha) {
+        throw new Error('Invalid blob response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function createGithubTree(tree: GithubTree[]): Promise<GitHubResponse> {
+    const baseTree = await getGithubTree();
+    
+    const response = await githubRequest<GitHubResponse>(
+        '/git/trees',
+        'POST',
+        {
+            tree,
+            base_tree: baseTree.sha
+        }
+    );
+
+    if (!response.sha) {
+        throw new Error('Invalid create tree response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function createGithubCommit(message: string, treeSha: string): Promise<GitHubResponse> {
+    const reference = await getGithubReference();
+    
+    const response = await githubRequest<GitHubResponse>(
+        '/git/commits',
+        'POST',
+        {
+            message,
+            tree: treeSha,
+            parents: [reference.object!.sha]
+        }
+    );
+
+    if (!response.sha) {
+        throw new Error('Invalid commit response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function githubUpdateReference(sha: string): Promise<GitHubResponse> {
+    const response = await githubRequest<GitHubResponse>(
+        '/git/refs/heads/main',
+        'PATCH',
+        {
+            sha,
+            force: true
+        }
+    );
+
+    if (!response.object?.sha) {
+        throw new Error('Invalid update reference response: missing SHA');
+    }
+
+    return response;
+}
+
+export async function updateGithubFiles(files: GithubTree[], message: string): Promise<GitHubResponse> {
+    try {
+        // Input validation
+        if (!files?.length) {
+            throw new Error('Files array cannot be empty');
+        }
+        if (!message?.trim()) {
+            throw new Error('Commit message cannot be empty');
+        }
+
+        // Create tree
+        const tree = await createGithubTree(files);
+
+        // Create commit
+        const commit = await createGithubCommit(message, tree.sha);
+
+        // Update reference
+        const response = await githubUpdateReference(commit.sha);
+        return response;
+    } catch (error) {
+        console.error('Failed to update GitHub files:', error);
+        throw error;
+    }
 }
