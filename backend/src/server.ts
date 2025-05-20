@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
 import { prompt } from './constants';
-import { sha256, parseWorkflowStreamAndReturnOutputs, countTotalDisplayLineBlocks, splitOriginalStringByDisplayLines, updateGithubFiles } from './utiles';
+import { sha1, parseWorkflowStreamAndReturnOutputs, countTotalDisplayLineBlocks, splitOriginalStringByDisplayLines, updateGithubFiles } from './utiles';
 import { ResponseData, ResponseDify, Subtitles, GithubTree } from './types';
 
 const turndownService = new TurndownService();
@@ -47,7 +47,7 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
     }
 
     const { elementData, telegramBotToken, telegramChatId } = taskPayload;
-    const innerHTML_UniqueID = await sha256(elementData.innerHTML);
+    const innerHTML_UniqueID = await sha1(elementData.innerHTML);
     const md = turndownService.turndown(elementData.innerHTML);
     // Create markdown directory if it doesn't exist
     const markdownDir = path.join(__dirname, '../markdown');
@@ -121,11 +121,12 @@ app.post('/api/initiate-task', async (req: Request, res: Response) => {
         const slaide = slides.map((s, i) => {
           let subtitles: Subtitles = {}
           let headmatter = ''
+          s.slide = s.slide.replace(/\n---\n/g, '')
           if (i === 0) {
             headmatter = `
 theme: seriph
 background: https://cover.sli.dev
-title: ${title}
+title: "${title}"
 titleTemplate: '%s - Slaide'
 layout: cover
 addons:
@@ -137,7 +138,7 @@ subtitlesConfig:
     en: "English(US)"
     zh_CN: "中文(简体)"
   apiCustom:
-    voice: 'rate:-0.1|pitch:0.1'
+    voice: 'rate:-0.2|pitch:0.1'
   ttsModel:
     zh_CN:
       - value: "zh-CN-YunjianNeural"
@@ -185,19 +186,19 @@ layout: two-cols
         }
 
         // Generate filename with timestamp if file exists
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-        let slaidePath = `${innerHTML_UniqueID}.md`;
+        const timestamp = Date.now();
+        let slaideName = `${innerHTML_UniqueID}.md`;
         let counter = 1;
-        while (fs.existsSync(path.join(slidesDir, slaidePath))) {
-          slaidePath = `${innerHTML_UniqueID}-${timestamp}-${counter}.md`;
+        while (fs.existsSync(path.join(slidesDir, slaideName))) {
+          slaideName = `${innerHTML_UniqueID}-${timestamp}-${counter}.md`;
           counter++;
         }
 
         // Write data to markdown file
         try {
-          fs.writeFileSync(path.join(slidesDir, slaidePath), slaide);
+          fs.writeFileSync(path.join(slidesDir, slaideName), slaide);
         } catch (error) {
-          console.error(`Error writing to file ${slaidePath}:`, error);
+          console.error(`Error writing to file ${slaideName}:`, error);
           throw error;
         }
 
@@ -209,15 +210,19 @@ layout: two-cols
             type: 'blob',
           },
           {
-            path: `slides/${slaidePath}.md`,
+            path: `slides/${slaideName}`,
             mode: '100644',
             content: slaide,
             type: 'blob',
           }
         ]
 
+        const tgBotInfo = {
+          token: telegramBotToken,
+          chatId: telegramChatId,
+        }
         // console.log('update github files')
-        await updateGithubFiles(updateFiles, `${slaidePath}.md`)
+        await updateGithubFiles(updateFiles, slaideName, tgBotInfo)
         // console.log('update github files done')
         
         fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
@@ -227,7 +232,7 @@ layout: two-cols
           },
           body: JSON.stringify({
             chat_id: telegramChatId,
-            text: `ID: ${innerHTML_UniqueID} duration: ${duration} seconds`,
+            text: `Deploying...\n\nTitle: ${title}\nID: ${innerHTML_UniqueID}\nDuration: ${duration} seconds`,
           }),
         });
       } catch (error: any) {
@@ -239,7 +244,7 @@ layout: two-cols
           },
           body: JSON.stringify({
             chat_id: telegramChatId,
-            text: `ID: ${innerHTML_UniqueID} error: ${error.message} duration: ${duration}`, // Telegram message limit is 4096 characters
+            text: `Error\n\nID: ${innerHTML_UniqueID}\nMessage: ${error.message}\nDuration: ${duration}`, // Telegram message limit is 4096 characters
           }),
         }).catch((error) => {
           console.log(error.message)

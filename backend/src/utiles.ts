@@ -1,5 +1,5 @@
 import { $fetch } from 'ofetch'
-import { GitHubResponse, GithubTree } from './types';
+import { GitHubResponse, GithubTree, TgBotInfo } from './types';
 
 export async function sha256(message: string) {
   const encoder = new TextEncoder();
@@ -8,6 +8,15 @@ export async function sha256(message: string) {
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
   return hashHex;
+}
+
+export async function sha1(message: string) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
 }
 
 /**
@@ -313,6 +322,7 @@ export function splitOriginalStringByDisplayLines(originalString: string, target
 
 const slaideHubGithubRepo = process.env.SLAIDE_HUB_GITHUB_REPO || ''
 const githubToken = process.env.GITHUB_TOKEN || ''
+const platform = process.env.DEPLOY_PLATFORM || 'cloudflare' // cloudflare, vercel, netlify, local
 // GitHub API 配置
 const GITHUB_API_VERSION = '2022-11-28';
 const GITHUB_API_BASE = 'https://api.github.com';
@@ -352,7 +362,7 @@ async function githubRequest<T>(
             responseType: 'json',
         });
 
-        if (!response) {
+        if (!response && endpoint !== '/dispatches') {
             throw new Error(`Empty response from GitHub API: ${endpoint}`);
         }
 
@@ -462,13 +472,29 @@ export async function githubUpdateReference(sha: string): Promise<GitHubResponse
     return response;
 }
 
-export async function updateGithubFiles(files: GithubTree[], message: string): Promise<GitHubResponse> {
+export async function githubDispatchWorkflow(slaide: string, tgBotInfo?: TgBotInfo): Promise<void> {
+    await githubRequest(
+        '/dispatches',
+        'POST',
+        {
+          event_type: 'deploy',
+          client_payload: {
+            file: slaide,
+            platform,
+            tgBotInfo,
+            projectName: slaide.slice(0, -3)
+          },
+        }
+    );
+}
+
+export async function updateGithubFiles(files: GithubTree[], slaideName: string, tgBotInfo?: TgBotInfo): Promise<void> {
     try {
         // Input validation
         if (!files?.length) {
             throw new Error('Files array cannot be empty');
         }
-        if (!message?.trim()) {
+        if (!slaideName?.trim()) {
             throw new Error('Commit message cannot be empty');
         }
 
@@ -476,11 +502,15 @@ export async function updateGithubFiles(files: GithubTree[], message: string): P
         const tree = await createGithubTree(files);
 
         // Create commit
-        const commit = await createGithubCommit(message, tree.sha);
+        const commit = await createGithubCommit(slaideName, tree.sha);
 
         // Update reference
-        const response = await githubUpdateReference(commit.sha);
-        return response;
+        const update = await githubUpdateReference(commit.sha);
+        if (!update.object?.sha) {
+            throw new Error('Invalid update reference response: missing SHA');
+        }
+
+        await githubDispatchWorkflow(slaideName, tgBotInfo);
     } catch (error) {
         console.error('Failed to update GitHub files:', error);
         throw error;

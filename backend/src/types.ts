@@ -42,3 +42,8 @@ export interface GithubTree {
   content?: string
   sha?: string
 }
+
+export interface TgBotInfo {
+  token: string
+  chatId: string
+}
