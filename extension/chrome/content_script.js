@@ -2,11 +2,39 @@
 
 let currentHoverElement = null;
 let lastClickedElement = null;
-let isExtensionEnabled = false; // Default to false, will be updated by background.js
+let isExtensionEnabled = false;
 let styleElement = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 3;
 
-const HOVER_CLASS = 'element-selector-hover-highlight-v4'; 
+const HOVER_CLASS = 'element-selector-hover-highlight-v4';
 const CLICKED_CLASS = 'element-selector-clicked-highlight-v4';
+
+function handleRuntimeError() {
+    const error = chrome.runtime.lastError;
+    if (error) {
+        console.warn('ContentScript: Runtime error:', error.message);
+        if (error.message.includes('Extension context invalidated')) {
+            handleExtensionInvalidated();
+        }
+        return true;
+    }
+    return false;
+}
+
+function handleExtensionInvalidated() {
+    console.log('ContentScript: Extension context invalidated. Attempting to reconnect...');
+    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+        reconnectAttempts++;
+        setTimeout(() => {
+            console.log(`ContentScript: Reconnection attempt ${reconnectAttempts}...`);
+            requestStateFromBackground();
+        }, 1000 * reconnectAttempts); // Exponential backoff
+    } else {
+        console.log('ContentScript: Max reconnection attempts reached. Please reload the page.');
+        applyCurrentSelectionState(false);
+    }
+}
 
 function applyCurrentSelectionState(enabled) {
     if (isExtensionEnabled !== enabled) {
@@ -25,24 +53,27 @@ function applyCurrentSelectionState(enabled) {
 function requestStateFromBackground() {
     if (chrome.runtime && chrome.runtime.sendMessage) {
         console.log("ContentScript: Requesting current selection state from background...");
-        chrome.runtime.sendMessage({ type: 'GET_CURRENT_SELECTION_STATE_FOR_TAB' }, (response) => {
-            if (chrome.runtime.lastError) {
-                console.warn('ContentScript: Error getting current state from background:', chrome.runtime.lastError.message, '(This can happen if background is not ready yet)');
-                // Optionally, retry or fallback to a disabled state
-                applyCurrentSelectionState(false); // Fallback to disabled if error
-                return;
-            }
-            if (response && response.selectionEnabled !== undefined) {
-                console.log("ContentScript: Received current selection state from background:", response.selectionEnabled);
-                applyCurrentSelectionState(response.selectionEnabled);
-            } else {
-                console.warn("ContentScript: Invalid or no response from background for GET_CURRENT_SELECTION_STATE_FOR_TAB. Defaulting to disabled.");
-                applyCurrentSelectionState(false); // Fallback
-            }
-        });
+        try {
+            chrome.runtime.sendMessage({ type: 'GET_CURRENT_SELECTION_STATE_FOR_TAB' }, (response) => {
+                if (handleRuntimeError()) {
+                    applyCurrentSelectionState(false);
+                    return;
+                }
+                if (response && response.selectionEnabled !== undefined) {
+                    console.log("ContentScript: Received current selection state from background:", response.selectionEnabled);
+                    reconnectAttempts = 0; // Reset reconnect attempts on successful communication
+                    applyCurrentSelectionState(response.selectionEnabled);
+                } else {
+                    console.warn("ContentScript: Invalid or no response from background. Defaulting to disabled.");
+                    applyCurrentSelectionState(false);
+                }
+            });
+        } catch (e) {
+            console.error("ContentScript: Error sending message:", e);
+            applyCurrentSelectionState(false);
+        }
     } else {
-        // Fallback if runtime is not available (e.g., during script injection phase sometimes)
-        console.warn("ContentScript: chrome.runtime not available to request state. Defaulting to disabled.");
+        console.warn("ContentScript: chrome.runtime not available. Defaulting to disabled.");
         applyCurrentSelectionState(false);
     }
 }
@@ -103,16 +134,25 @@ function handleClick(e) {
     currentHoverElement = targetElement;
 
     const data = {
-        timestamp: new Date().toISOString(), url: window.location.href, tagName: targetElement.tagName,
-        id: targetElement.id || null, classList: Array.from(targetElement.classList).filter(cls => cls !== CLICKED_CLASS && cls !== HOVER_CLASS),
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        tagName: targetElement.tagName,
+        id: targetElement.id || null,
+        classList: Array.from(targetElement.classList).filter(cls => cls !== CLICKED_CLASS && cls !== HOVER_CLASS),
         attributes: Array.from(targetElement.attributes).reduce((obj, attr) => { obj[attr.name] = attr.value; return obj; }, {}),
         textContent: targetElement.textContent ? targetElement.textContent.trim() : '',
-        innerHTML: targetElement.innerHTML, outerHTML: targetElement.outerHTML,
+        innerHTML: targetElement.innerHTML,
+        outerHTML: targetElement.outerHTML,
     };
     console.log("%cContentScript: Element Clicked & Data Extracted:", "color: red; font-weight: bold;", targetElement);
-    chrome.runtime.sendMessage({ type: 'ELEMENT_DATA_CAPTURED', data: data }, (response) => {
-        if (chrome.runtime.lastError) console.error('CS: Error sending ELEMENT_DATA_CAPTURED:', chrome.runtime.lastError.message);
-    });
+    try {
+        chrome.runtime.sendMessage({ type: 'ELEMENT_DATA_CAPTURED', data: data }, (response) => {
+            if (handleRuntimeError()) return;
+        });
+    } catch (e) {
+        console.error("ContentScript: Error sending element data:", e);
+        handleExtensionInvalidated();
+    }
 }
 
 function handleKeyDown(e) {
@@ -136,12 +176,17 @@ function handleKeyDown(e) {
 
 // Listen for state pushes from background.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (message.type === 'SET_SELECTION_ENABLED') {
-        applyCurrentSelectionState(message.enabled);
-        sendResponse({status: "Selection state updated in content script."}); 
-        return true; 
+    try {
+        if (message.type === 'SET_SELECTION_ENABLED') {
+            applyCurrentSelectionState(message.enabled);
+            sendResponse({status: "Selection state updated in content script."});
+            return true;
+        }
+    } catch (e) {
+        console.error("ContentScript: Error handling message:", e);
+        handleExtensionInvalidated();
     }
-    return false; 
+    return false;
 });
 
 function attachEventListeners() {
