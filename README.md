@@ -1,9 +1,9 @@
 <h1 align="center">
-DeckVox
+Slaide
 </h1>
 
 <p align="center">
-<strong>Smart Slides, Smarter Voice.</strong>
+<strong>Create Slides with ai.</strong>
 </p>
 <p align="center">
 Powered by <strong>Slidev</strong>
