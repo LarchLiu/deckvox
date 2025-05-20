@@ -129,6 +129,9 @@ background: https://cover.sli.dev
 title: "${title}"
 titleTemplate: '%s - Slaide'
 layout: cover
+presenter: dev
+seoMeta:
+  ogTitle: "${title}"
 addons:
   - slidev-theme-viplay
 subtitlesConfig:
@@ -232,7 +235,7 @@ layout: two-cols
           },
           body: JSON.stringify({
             chat_id: telegramChatId,
-            text: `Deploying...\n\nTitle: ${title}\nID: ${innerHTML_UniqueID}\nDuration: ${duration} seconds`,
+            text: `👨‍💻 Deploying...\n\nTitle: ${title}\nID: ${innerHTML_UniqueID}\nDuration: ${duration} seconds`,
           }),
         });
       } catch (error: any) {
@@ -244,7 +247,7 @@ layout: two-cols
           },
           body: JSON.stringify({
             chat_id: telegramChatId,
-            text: `Error\n\nID: ${innerHTML_UniqueID}\nMessage: ${error.message}\nDuration: ${duration}`, // Telegram message limit is 4096 characters
+            text: `❌ Error\n\nID: ${innerHTML_UniqueID}\nMessage: ${error.message}\nDuration: ${duration}`,
           }),
         }).catch((error) => {
           console.log(error.message)
