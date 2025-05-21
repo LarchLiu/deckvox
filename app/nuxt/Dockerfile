@@ -1,6 +1,8 @@
 FROM node:20-alpine AS build-stage
 
 WORKDIR /app
+
+RUN npm i -g pnpm
 RUN corepack enable
 
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
