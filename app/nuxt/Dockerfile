@@ -6,8 +6,7 @@ RUN npm i -g pnpm
 RUN corepack enable
 
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=s/pnpm-store-/root/.pnpm-store,target=/root/.pnpm-store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 RUN pnpm build
