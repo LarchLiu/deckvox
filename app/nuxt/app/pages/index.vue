@@ -4,6 +4,48 @@ definePageMeta({
 })
 
 const contents = ref('')
+const showSettingsInput = ref(false)
+const feishuBotUrl = useLocalStorage('feishu-bot', '')
+
+async function onSendClick() {
+  if (contents.value.trim() === '' || !feishuBotUrl.value) {
+    // Show a toast or alert to inform the user to fill in the required fields
+    if (!contents.value.trim()) {
+      // eslint-disable-next-line no-alert
+      alert('Please enter a message.')
+    }
+    if (!feishuBotUrl.value) {
+      // eslint-disable-next-line no-alert
+      alert('Please click settings and input Feishu bot URL.')
+    }
+    return
+  }
+  try {
+    const res = await $fetch('/api/initiate-task', {
+      method: 'POST',
+      body: {
+        taskData: {
+          contents: contents.value,
+          botInfo: {
+            feishuBot: {
+              url: feishuBotUrl.value,
+            },
+          },
+        },
+      },
+    })
+    contents.value = ''
+    // eslint-disable-next-line no-alert
+    alert(`ID: ${res.contentId} ${res.message}`)
+  }
+  catch (error) {
+    console.error('Error:', error)
+  }
+}
+
+function toggleSettings() {
+  showSettingsInput.value = !showSettingsInput.value
+}
 </script>
 
 <template>
@@ -28,38 +70,38 @@ const contents = ref('')
 
       <nav class="flex-1">
         <div class="px-4 py-2">
-          <div class="text-primary py-1.5 flex gap-2 items-center">
+          <div class="py-1.5 flex gap-2 items-center text-primary">
             <div class="i-carbon-time" />
             <span>Recents</span>
           </div>
-          <div class="text-primary py-1.5 flex gap-2 items-center">
+          <div class="py-1.5 flex gap-2 items-center text-primary">
             <div class="i-carbon-thumbnail-2" />
             <span>Projects</span>
           </div>
-          <div class="text-primary py-1.5 flex gap-2 items-center">
+          <div class="py-1.5 flex gap-2 items-center text-primary">
             <div class="i-carbon-events" />
             <span>Community</span>
           </div>
         </div>
 
         <div class="mt-2">
-          <div class="text-primary px-4 py-2 flex items-center justify-between">
+          <div class="px-4 py-2 flex items-center justify-between text-primary">
             <span>Favorite Projects</span>
             <div class="i-carbon-chevron-right" />
           </div>
-          <div class="text-primary px-4 py-2 flex items-center justify-between">
+          <div class="px-4 py-2 flex items-center justify-between text-primary">
             <span>Favorite Chats</span>
             <div class="i-carbon-chevron-right" />
           </div>
-          <div class="text-primary px-4 py-2 flex items-center justify-between">
+          <div class="px-4 py-2 flex items-center justify-between text-primary">
             <span>Recent</span>
             <div class="i-carbon-chevron-down" />
           </div>
           <div class="pl-4 pr-2">
-            <div class="text-primary text-sm px-2 py-1.5">
+            <div class="text-sm px-2 py-1.5 text-primary">
               Landing page design
             </div>
-            <div class="text-primary text-sm px-2 py-1.5">
+            <div class="text-sm px-2 py-1.5 text-primary">
               Image Partial Selection
             </div>
           </div>
@@ -77,27 +119,33 @@ const contents = ref('')
       </header>
 
       <main class="px-4 flex flex-1 flex-col items-center justify-center">
-        <h1 class="text-primary text-4xl font-bold mb-8">
+        <h1 class="text-4xl font-bold mb-8 text-primary">
           What can I help you ship?
         </h1>
 
         <div class="mb-6 max-w-[800px] w-full">
           <div class="border rounded-lg shadow-sm">
             <div class="p-3">
-              <input v-model="contents" type="text" placeholder="Write something to build..." class="text-primary outline-0 bg-transparent w-full">
+              <input v-model="contents" type="text" placeholder="Write something to build..." class="outline-0 bg-transparent w-full text-primary">
             </div>
             <div class="p-2 border-t flex items-center justify-between">
               <div class="flex items-center">
-                <button class="text-primary text-sm px-2 py-1 rounded flex gap-1 items-center hover:bg-gray-100">
+                <button class="text-sm px-2 py-1 rounded flex gap-1 items-center text-primary hover:bg-gray-100">
                   <span>Nothing selected</span>
                   <div class="i-carbon-chevron-down" />
                 </button>
               </div>
               <div class="flex gap-2 items-center">
+                <div v-if="showSettingsInput" class="w-[200px]">
+                  <input v-model="feishuBotUrl" type="text" placeholder="Enter feishu bot url" class="bg-transparent w-full text-primary">
+                </div>
+                <button class="text-gray-500 p-1 cursor-pointer hover:text-gray-700" @click="toggleSettings">
+                  <div :class="showSettingsInput ? 'i-carbon-save' : 'i-carbon-settings'" />
+                </button>
                 <button class="text-gray-500 p-1 hover:text-gray-700">
                   <div class="i-cil-paperclip" />
                 </button>
-                <button class="text-gray-500 p-1 hover:text-gray-700">
+                <button class="text-gray-500 p-1 cursor-pointer hover:text-gray-700" @click="onSendClick">
                   <div class="i-carbon-arrow-up" />
                 </button>
               </div>
@@ -134,11 +182,11 @@ const contents = ref('')
               <h2 class="text-lg font-semibold">
                 From the Community
               </h2>
-              <p class="text-primary text-sm">
+              <p class="text-sm text-primary">
                 Explore what the community is building with Slaide.
               </p>
             </div>
-            <button class="text-primary text-sm flex items-center">
+            <button class="text-sm flex items-center text-primary">
               Browse All
               <div class="i-carbon-chevron-right" />
             </button>
@@ -235,3 +283,15 @@ const contents = ref('')
     </div>
   </div>
 </template>
+
+<style scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

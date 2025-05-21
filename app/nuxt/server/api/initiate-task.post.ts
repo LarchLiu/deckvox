@@ -10,16 +10,17 @@ const turndownService = new TurndownService()
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig()
   const body = await readBody<RequestData>(event)
+  const { elementData, botInfo, contents } = body.taskData
+
   try {
     // The payload from the extension is expected to be:
     // req.body = { taskData: { elementData, telegramBotToken, telegramChatId } }
-    const { elementData, telegramBotToken, telegramChatId, contents } = body.taskData
 
-    if (body && (!telegramBotToken || !telegramChatId)) {
+    if (body && !botInfo) {
       throw createError({
         status: 400,
         statusMessage: 'Bad Request',
-        message: 'Missing required fields',
+        message: 'Missing bot info',
       })
     }
 
@@ -189,7 +190,7 @@ layout: two-cols
         const slidesFiles = await getGithubFiles('slides')
         let slidesFile = slidesFiles.find(file => file.name === slaideName)
 
-        while (!slidesFile) {
+        while (slidesFile) {
           slaideName = `${innerHTML_UniqueID}-${timestamp}-${counter}.md`
           counter++
           slidesFile = slidesFiles.find(file => file.name === slaideName)
@@ -219,39 +220,70 @@ layout: two-cols
           },
         ]
 
-        const tgBotInfo = {
-          token: telegramBotToken!,
-          chatId: telegramChatId!,
-        }
         // console.log('update github files')
-        await updateGithubFiles(updateFiles, slaideName, tgBotInfo)
+        await updateGithubFiles(updateFiles, slaideName, botInfo)
         // console.log('update github files done')
-
-        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chat_id: telegramChatId,
-            text: `👨‍💻 Deploying...\n\nTitle: ${title}\nID: ${innerHTML_UniqueID}\nDuration: ${duration} seconds`,
-          }),
-        })
+        const text = `👨‍💻 Deploying...\n\nTitle: ${title}\nID: ${innerHTML_UniqueID}\nDuration: ${duration} seconds`
+        if (botInfo.tgBot) {
+          $fetch(`https://api.telegram.org/bot${botInfo.tgBot.token}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: {
+              chat_id: botInfo.tgBot.chatId,
+              text,
+            },
+          })
+        }
+        if (botInfo.feishuBot) {
+          $fetch(botInfo.feishuBot.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: {
+              msg_type: 'text',
+              content: {
+                text,
+              },
+            },
+          })
+        }
       }
       catch (error: any) {
         const duration = (Date.now() - startTime) / 1000
-        fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chat_id: telegramChatId,
-            text: `❌ Error\n\nID: ${innerHTML_UniqueID}\nMessage: ${error.message}\nDuration: ${duration}`,
-          }),
-        }).catch((error) => {
-          console.log(error.message)
-        })
+        const text = `❌ Error\n\nID: ${innerHTML_UniqueID}\nMessage: ${error.message}\nDuration: ${duration}`
+        if (botInfo.tgBot) {
+          fetch(`https://api.telegram.org/bot${botInfo.tgBot.token}/sendMessage`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              chat_id: botInfo.tgBot.chatId,
+              text,
+            }),
+          }).catch((error) => {
+            console.log(error.message)
+          })
+        }
+        if (botInfo.feishuBot) {
+          fetch(botInfo.feishuBot.url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              msg_type: 'text',
+              content: {
+                text,
+              },
+            }),
+          }).catch((error) => {
+            console.log(error.message)
+          })
+        }
       }
     })
 

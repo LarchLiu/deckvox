@@ -60,6 +60,10 @@ export interface TgBotInfo {
   chatId: string
 }
 
+export interface FeishuBotInfo {
+  url: string
+}
+
 export interface ElementData {
   url?: string
   tagName?: string
@@ -75,9 +79,13 @@ export interface RequestData {
   taskData: TaskData
 }
 
+export interface BotInfo {
+  tgBot?: TgBotInfo
+  feishuBot?: FeishuBotInfo
+}
+
 export interface TaskData {
   contents?: string
+  botInfo: BotInfo
   elementData?: ElementData
-  telegramBotToken?: string
-  telegramChatId?: string
 }

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import type { GithubFiles, GitHubResponse, GithubTree, TgBotInfo } from '../types'
+import type { BotInfo, GithubFiles, GitHubResponse, GithubTree, TgBotInfo } from '../types'
 
 export async function sha256(message: string) {
   const encoder = new TextEncoder()
@@ -469,7 +469,7 @@ export async function githubUpdateReference(sha: string): Promise<GitHubResponse
   return response
 }
 
-export async function githubDispatchWorkflow(slaide: string, tgBotInfo?: TgBotInfo): Promise<void> {
+export async function githubDispatchWorkflow(slaide: string, botInfo?: BotInfo): Promise<void> {
   await githubRequest(
     '/dispatches',
     'POST',
@@ -478,7 +478,7 @@ export async function githubDispatchWorkflow(slaide: string, tgBotInfo?: TgBotIn
       client_payload: {
         file: slaide,
         platform,
-        tgBotInfo,
+        botInfo,
         projectName: slaide.slice(0, -3),
       },
     },
@@ -504,7 +504,7 @@ export async function getGithubFiles(path: string, branch: string = 'main'): Pro
   }
 }
 
-export async function updateGithubFiles(files: GithubTree[], slaideName: string, tgBotInfo?: TgBotInfo): Promise<void> {
+export async function updateGithubFiles(files: GithubTree[], slaideName: string, botInfo?: BotInfo): Promise<void> {
   try {
     // Input validation
     if (!files?.length) {
@@ -526,7 +526,7 @@ export async function updateGithubFiles(files: GithubTree[], slaideName: string,
       throw new Error('Invalid update reference response: missing SHA')
     }
 
-    await githubDispatchWorkflow(slaideName, tgBotInfo)
+    await githubDispatchWorkflow(slaideName, botInfo)
   }
   catch (error) {
     console.error('Failed to update GitHub files:', error)
