@@ -4,7 +4,7 @@ WORKDIR /app
 RUN corepack enable
 
 COPY .npmrc package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN --mount=type=cache,id=pnpm-store,target=/root/.pnpm-store \
+RUN --mount=type=cache,id=pnpm-store-/root/.pnpm-store,target=/root/.pnpm-store \
     pnpm install --frozen-lockfile
 
 COPY . .
