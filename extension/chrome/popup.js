@@ -217,8 +217,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 type: 'SEND_DATA_TO_API', 
                 payload: {
                     elementData: currentDataForSending,
-                    telegramBotToken: token,
-                    telegramChatId: chatId
+                    botInfo: {
+                        tgBot: {
+                            token,
+                            chatId
+                        }
+                    }
                 }
             }, (response) => {
                 if (chrome.runtime.lastError) {
