@@ -37,6 +37,14 @@ export default defineNuxtConfig({
     classSuffix: '',
   },
 
+  runtimeConfig: {
+    difyApiUrl: '',
+    difyApiKey: '',
+    slaideHubGithubRepo: '',
+    githubToken: '',
+    deployPlatform: '',
+  },
+
   future: {
     compatibilityVersion: 4,
   },

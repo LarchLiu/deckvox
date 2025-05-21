@@ -11,6 +11,7 @@ catalogs:
     '@vite-pwa/nuxt': ^1.0.0
     '@vueuse/nuxt': ^13.1.0
     nuxt: ^3.16.2
+    turndown: ^7.2.0
     unocss: ^66.1.2
     unplugin: ^2.2.2
     vite: ^6.2.5
@@ -32,6 +33,10 @@ catalogs:
     '@iconify-json/cil': ^1.2.2
     '@iconify-json/twemoji': ^1.2.2
 
+  types:
+    '@types/node': ^20.5.0
+    '@types/turndown': ^5.0.5
+
 onlyBuiltDependencies:
   - '@parcel/watcher'
-  - esbuild
+  - esbuild  
