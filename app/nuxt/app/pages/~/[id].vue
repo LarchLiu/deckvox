@@ -1,8 +1,19 @@
 <script setup lang="ts">
+import { WebContainer } from '@webcontainer/api'
+import { Terminal } from '@xterm/xterm'
 import { processLineWithReturn } from '~/utiles'
+import '@xterm/xterm/css/xterm.css'
+
+definePageMeta({
+  layout: false,
+})
 
 const taskStore = useTaskStore()
-const workflowFinishedOutputs = ref('') // Variable to store the outputs
+const workflowFinishedOutputs = ref('')
+const textareaValue = ref('')
+const iframeEl = ref<HTMLIFrameElement | null>(null)
+const textareaEl = ref<HTMLTextAreaElement | null>(null)
+const terminalEl = ref<HTMLDivElement | null>(null)
 
 const botInfo = computed(() => {
   const info: any = {}
@@ -15,7 +26,89 @@ const botInfo = computed(() => {
   }
   return info
 })
+
+let webcontainerInstance: WebContainer | null = null
+const files: any = {}
+
+function loadFile(name: string) {
+  const xhr = new XMLHttpRequest()
+  const okStatus = document.location.protocol === 'file:' ? 0 : 200
+  xhr.open('GET', name, false)
+  xhr.overrideMimeType('text/html;charset=utf-8')// 默认为utf-8
+  xhr.send(null)
+  return xhr.status === okStatus ? xhr.responseText : null
+}
+
+async function installDependencies(terminal: Terminal) {
+  // Install dependencies
+  const installProcess = await webcontainerInstance?.spawn('npm', ['install'])
+  installProcess?.output.pipeTo(
+    new WritableStream({
+      write(data) {
+        terminal.write(data)
+      },
+    }),
+  )
+  // Wait for install command to exit
+  return installProcess?.exit
+}
+
+async function startDevServer(terminal: Terminal) {
+  // Run `npm run start` to start the Express app
+  const serverProcess = await webcontainerInstance?.spawn('npm', ['run', 'dev'])
+
+  serverProcess?.output.pipeTo(
+    new WritableStream({
+      write(data) {
+        terminal.write(data)
+      },
+    }),
+  )
+
+  // Wait for `server-ready` event
+  webcontainerInstance?.on('server-ready', (port, url) => {
+    iframeEl.value && (iframeEl.value.src = url)
+  })
+}
+
+/**
+ * @param {string} content
+ */
+
+async function writeIndexJS(content: string) {
+  await webcontainerInstance?.fs.writeFile('/slides.md', content)
+}
+files['slides.md'] = { file: {
+  contents: loadFile('/slidev/slides.md'),
+} }
+files['package.json'] = { file: {
+  contents: loadFile('/slidev/package.json'),
+} }
 onMounted(async () => {
+  nextTick(async () => {
+    textareaValue.value = files['slides.md'].file.contents
+    textareaEl.value!.addEventListener('input', (e) => {
+      writeIndexJS((e.currentTarget as HTMLTextAreaElement)?.value)
+    })
+    // console.log(terminalEl.value, textareaEl.value)
+
+    const terminal = new Terminal({
+      convertEol: true,
+    })
+    terminal.open(terminalEl.value!)
+
+    // Call only once
+    webcontainerInstance = await WebContainer.boot()
+    await webcontainerInstance.mount(files)
+
+    const exitCode = await installDependencies(terminal)
+    if (exitCode !== 0) {
+      throw new Error('Installation failed')
+    }
+
+    startDevServer(terminal)
+  })
+
   const data = await $fetch<ReadableStream>('/api/init-task/', {
     method: 'POST',
     responseType: 'stream',
@@ -97,12 +190,107 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
-    hi
-    <div>{{ workflowFinishedOutputs }}</div>
-  </div>
+  <client-only>
+    <div class="flex flex-row h-screen w-screen">
+      <div class="flex flex-col h-full">
+        <div class="h-30rem">
+          <iframe ref="iframeEl" src="/loading.html" />
+        </div>
+        <div ref="terminalEl" class="terminal" />
+      </div>
+      <div class="flex flex-col w-full">
+        <textarea ref="textareaEl" v-model="textareaValue" @change="(e) => writeIndexJS((e.currentTarget as HTMLTextAreaElement).value || '')" />
+      </div>
+    <!-- <div>{{ workflowFinishedOutputs }}</div> -->
+    </div>
+  </client-only>
 </template>
 
 <style scoped>
+* {
+  box-sizing: border-box;
+}
 
+body {
+  margin: 0.5rem 1rem;
+  height: 100vh;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    'Roboto',
+    'Oxygen',
+    'Ubuntu',
+    'Cantarell',
+    'Fira Sans',
+    'Droid Sans',
+    'Helvetica Neue',
+    sans-serif;
+}
+
+header {
+  text-align: center;
+}
+
+header h1 {
+  margin-bottom: 0;
+}
+
+header p {
+  font-size: 1.5rem;
+  margin-top: 0;
+}
+
+iframe,
+textarea {
+  border-radius: 3px;
+}
+
+iframe {
+  height: 30rem;
+  width: 100%;
+  border: solid 2px #ccc;
+}
+
+textarea {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  background: black;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 120%;
+}
+
+.terminal {
+  width: 100%;
+  height: calc(100vh - 30rem) !important;
+  border: solid 1px #ccc;
+  border-radius: 3px;
+}
+
+:deep(.xterm-screen) {
+  height: calc(100vh - 30rem) !important;
+}
+
+.wc {
+  -webkit-text-fill-color: #0000;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: linear-gradient(to right, #761fac 0, #8a19a9 20%, #d900a5 70%, #d917a3 100%);
+  filter: drop-shadow(0 1px 0 #fff);
+  font-weight: 800;
+  color: #69f5ff;
+  text-decoration: underline;
+}
+
+.docs {
+  margin-left: 5px;
+  text-decoration: none;
+  font-weight: 600;
+  color: #333;
+  font-size: 80%;
+  text-decoration: underline;
+}
 </style>

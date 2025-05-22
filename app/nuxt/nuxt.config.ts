@@ -45,6 +45,19 @@ export default defineNuxtConfig({
     deployPlatform: '',
   },
 
+  routeRules: {
+    '/': {
+      prerender: true,
+    },
+    '/~/*': {
+      ssr: false,
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
+    },
+  },
+
   future: {
     compatibilityVersion: 4,
   },
@@ -68,7 +81,22 @@ export default defineNuxtConfig({
     prerender: {
       crawlLinks: false,
       routes: ['/'],
-      ignore: ['/hi'],
+      ignore: ['/~'],
+    },
+  },
+
+  vite: {
+    server: {
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+      },
+    },
+    preview: { // Also for preview server
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+      },
     },
   },
 
