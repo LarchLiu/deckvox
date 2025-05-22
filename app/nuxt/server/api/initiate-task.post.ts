@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
-import type { GithubTree, RequestData, ResponseDify, Subtitles } from '../types'
-import fs from 'node:fs'
-import path from 'node:path'
+import type { RequestData } from '~~/types'
+import type { GithubTree, ResponseDify, Subtitles } from '../types'
 import TurndownService from 'turndown'
 import { countTotalDisplayLineBlocks, getGithubFiles, parseWorkflowStreamAndReturnOutputs, sha1, splitOriginalStringByDisplayLines, updateGithubFiles } from '../utiles'
 
@@ -10,7 +9,7 @@ const turndownService = new TurndownService()
 export default defineEventHandler(async (event) => {
   const runtimeConfig = useRuntimeConfig()
   const body = await readBody<RequestData>(event)
-  const { elementData, botInfo, contents } = body.taskData
+  const { elementData, botInfo, contents, sha1: contentsSha1 } = body.taskData
 
   try {
     // The payload from the extension is expected to be:
@@ -24,14 +23,20 @@ export default defineEventHandler(async (event) => {
       })
     }
 
-    let innerHTML_UniqueID = ''
+    let innerHTML_UniqueID = contentsSha1
     let md = ''
     if (elementData && elementData.innerHTML) {
-      innerHTML_UniqueID = await sha1(elementData.innerHTML)
+      if (!innerHTML_UniqueID) {
+        innerHTML_UniqueID = await sha1(elementData.innerHTML)
+      }
+
       md = turndownService.turndown(elementData.innerHTML)
     }
     else if (contents) {
-      innerHTML_UniqueID = await sha1(contents)
+      if (!innerHTML_UniqueID) {
+        innerHTML_UniqueID = await sha1(contents)
+      }
+
       md = turndownService.turndown(contents)
     }
     else {

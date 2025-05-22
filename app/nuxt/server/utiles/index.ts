@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
-import type { BotInfo, GithubFiles, GitHubResponse, GithubTree, TgBotInfo } from '../types'
+import type { BotInfo } from '~~/types'
+import type { GithubFiles, GitHubResponse, GithubTree } from '../types'
 
 export async function sha256(message: string) {
   const encoder = new TextEncoder()
