@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "DeckVox",
+  "name": "Slaide",
   "version": "0.0.1",
-  "description": "DeckVox - Smart Slides, Smarter Voice.",
+  "description": "Slaide - Smart Slides, Smarter Voice.",
   "permissions": [
     "storage",
     "activeTab",

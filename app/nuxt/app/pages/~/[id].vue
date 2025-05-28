@@ -87,9 +87,9 @@ files['package.json'] = { file: {
 onMounted(async () => {
   nextTick(async () => {
     textareaValue.value = files['slides.md'].file.contents
-    textareaEl.value!.addEventListener('input', (e) => {
-      writeIndexJS((e.currentTarget as HTMLTextAreaElement)?.value)
-    })
+    // textareaEl.value!.addEventListener('input', (e) => {
+    //   writeIndexJS((e.currentTarget as HTMLTextAreaElement)?.value)
+    // })
     // console.log(terminalEl.value, textareaEl.value)
 
     const terminal = new Terminal({
@@ -199,7 +199,7 @@ onMounted(async () => {
         <div ref="terminalEl" class="terminal" />
       </div>
       <div class="flex flex-col w-full">
-        <textarea ref="textareaEl" v-model="textareaValue" @change="(e) => writeIndexJS((e.currentTarget as HTMLTextAreaElement).value || '')" />
+        <textarea ref="textareaEl" v-model="textareaValue" @input="(e) => writeIndexJS((e.currentTarget as HTMLTextAreaElement).value || '')" />
       </div>
     <!-- <div>{{ workflowFinishedOutputs }}</div> -->
     </div>
