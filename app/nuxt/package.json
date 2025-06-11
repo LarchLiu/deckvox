@@ -13,7 +13,11 @@
     "lint": "eslint .",
     "typecheck": "nuxi typecheck"
   },
+  "dependencies": {
+
+  },
   "devDependencies": {
+    "@ai-sdk/google": "catalog:build",
     "@antfu/eslint-config": "catalog:dev",
     "@iconify-json/carbon": "catalog:icons",
     "@iconify-json/cil": "catalog:icons",
@@ -31,6 +35,7 @@
     "@vueuse/nuxt": "catalog:build",
     "@webcontainer/api": "catalog:frontend",
     "@xterm/xterm": "catalog:frontend",
+    "ai": "catalog:build",
     "eslint": "catalog:dev",
     "eslint-plugin-format": "catalog:dev",
     "nuxt": "catalog:build",
@@ -39,7 +44,8 @@
     "typescript": "catalog:dev",
     "unocss": "catalog:build",
     "vue": "catalog:frontend",
-    "vue-tsc": "catalog:dev"
+    "vue-tsc": "catalog:dev",
+    "zod": "catalog:dev"
   },
   "resolutions": {
     "@nuxt/devtools": "catalog:build",

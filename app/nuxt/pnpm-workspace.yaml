@@ -2,6 +2,7 @@ packages: []
 
 catalogs:
   build:
+    '@ai-sdk/google': ^1.2.18
     '@nuxt/devtools': ^2.3.2
     '@nuxt/eslint': ^1.3.0
     '@nuxtjs/color-mode': ^3.5.2
@@ -10,6 +11,7 @@ catalogs:
     '@unocss/nuxt': ^66.1.2
     '@vite-pwa/nuxt': ^1.0.0
     '@vueuse/nuxt': ^13.1.0
+    ai: ^4.3.16
     nuxt: ^3.16.2
     turndown: ^7.2.0
     unocss: ^66.1.2
@@ -22,6 +24,7 @@ catalogs:
     eslint-plugin-format: ^1.0.1
     typescript: ^5.8.3
     vue-tsc: ^2.2.8
+    zod: ^3.25.36
 
   frontend:
     '@vueuse/core': ^13.1.0

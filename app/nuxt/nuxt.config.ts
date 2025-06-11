@@ -38,6 +38,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    aiApiKey: '',
+    aiApiUrl: '',
+    aiModel: '',
     difyApiUrl: '',
     difyApiKey: '',
     slaideHubGithubRepo: '',

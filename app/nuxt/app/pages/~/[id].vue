@@ -9,7 +9,7 @@ definePageMeta({
 })
 
 const taskStore = useTaskStore()
-const workflowFinishedOutputs = ref('')
+// const workflowFinishedOutputs = ref('')
 const textareaValue = ref('')
 const iframeEl = ref<HTMLIFrameElement | null>(null)
 const textareaEl = ref<HTMLTextAreaElement | null>(null)
@@ -176,7 +176,7 @@ onMounted(async () => {
           // Store the found outputs. If multiple workflow_finished events occur,
           // this will store the outputs from the *last* one processed before stream ends.
           // If you only want the *first* one, you'd add logic here to break and resolve.
-          workflowFinishedOutputs.value = outputs
+          textareaValue.value = outputs
           // Example: If you only want the first one:
           // reader.cancel(); // Cancel the stream reading
           // resolve(workflowFinishedOutputs); // Resolve immediately

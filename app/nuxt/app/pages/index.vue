@@ -7,7 +7,7 @@ const contents = ref('')
 const showSettingsInput = ref(false)
 const feishuBotUrl = useLocalStorage('feishu-bot', '')
 const taskStore = useTaskStore()
-const router = useRouter()
+// const router = useRouter()
 
 async function onSendClick() {
   if (contents.value.trim() === '' || !feishuBotUrl.value) {
@@ -25,25 +25,25 @@ async function onSendClick() {
   try {
     taskStore.setContents(contents.value)
     taskStore.botInfo.feishuBot!.url = feishuBotUrl.value
-    nextTick(() => {
-      router.push(`/~/${taskStore.contentsSha1}`)
-    })
-    // const res = await $fetch('/api/initiate-task', {
-    //   method: 'POST',
-    //   body: {
-    //     taskData: {
-    //       contents: contents.value,
-    //       botInfo: {
-    //         feishuBot: {
-    //           url: feishuBotUrl.value,
-    //         },
-    //       },
-    //     },
-    //   },
+    // nextTick(() => {
+    //   router.push(`/~/${taskStore.contentsSha1}`)
     // })
-    // contents.value = ''
-    // // eslint-disable-next-line no-alert
-    // alert(`ID: ${res.contentId} ${res.message}`)
+    const res = await $fetch('/api/slides', {
+      method: 'POST',
+      body: {
+        taskData: {
+          contents: contents.value,
+          botInfo: {
+            feishuBot: {
+              url: feishuBotUrl.value,
+            },
+          },
+        },
+      },
+    })
+    contents.value = ''
+    // eslint-disable-next-line no-alert
+    alert(`ID: ${res.contentId} ${res.message}`)
   }
   catch (error) {
     console.error('Error:', error)
